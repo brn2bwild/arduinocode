@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+  html,body{
+    margin: 0 auto;
+    font-family: sans-serif;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  div{
+    display: inline-block;
+    width: 80%;
+    text-align: center;
+  }
+  label{
+    width: 100%;
+    float: left;
+    text-align: left;
+    font-size: 15px;
+  }
+  .input{
+    width: 100%;
+    font-size: 20px;
+    height: 25px;
+    border: 1.5px solid #000;
+    border-radius: 5px;
+    text-align: center;
+    margin: 0 0 0.5% 0;
+  }
+  .boton{
+    font-weight: 600;
+    font-size: 1.4rem;
+    height: 55px;
+    width: 50%;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 1% 0 0 0;
+  }
+</style>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset='utf-8'>  
+<title>Repetidor</title>
+</head>
+<body>
+  <button class="boton" onclick="toggle()" id="toggle">Credenciales</button>
+  <div id="credenciales" style="display: none;">
+    <h1>Repetidor</h1>
+    <h2>Introduzca las credenciales</h2>
+    <label>RED WIFI:</label>
+    <input class='input' id='ssid' maxlength="50">
+    <label>PASSWORD WIFI:</label>
+    <input type="password" class='input' id='pass' maxlength="50">
+    <label>SERVER TCP:</label>
+    <input class='input' id='servertcp' maxlength="120">
+    <label>PUERTO TCP:</label>
+    <input class="input" id="puertotcp" maxlength="10">
+    <label>SERVER DESTINO:</label>
+    <input class='input' id='serverdest' maxlength="120">
+    <label>PUERTO DESTINO:</label>
+    <input class="input" id="puertodest" maxlength="10">
+    <label>URL DESTINO:</label>
+    <input class='input' id='urldestino' maxlength="120">
+    <button class='boton' onclick="guardar()">GUARDAR</button>
+  </div>
+  <div id="datos" style="margin-top: 3%;">
+    <h1>Servidor TCP:</h1><h1 id="lservertcp">Desconectado</h1>
+    <h1>Puerto TCP:</h1><h1 id="lpuertotcp"></h1>
+    <h1>Servidor Destino:</h1><h1 id="lserverdest">Desconectado</h1>
+    <h1>Puerto Destino:</h1><h1 id="lpuertodest"></h1>
+    <button class='boton' onclick="reset()" style="margin-top: 3%;">RESET</button>
+  </div>
+</body>
+</form>
+<script type="text/javascript">
+  let timerId = setTimeout(function tick() {
+    estado_servers();
+    timerId = setTimeout(tick, 5000); // (*)
+  }, 5000);
+
+  function estado_servers(){
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(){
+      if(this.readyState == 4 && this.status == 200){
+        if(xhr.responseText != null){
+          json = JSON.parse(xhr.responseText);
+          document.getElementById('lservertcp').innerHTML = json.estadotcp;
+          document.getElementById('lpuertotcp').innerHTML = json.puertotcp;
+          document.getElementById('lserverdest').innerHTML = json.estadodest;
+          document.getElementById('lpuertodest').innerHTML = json.puertodest;
+        }
+      }
+    }
+    xhr.open("POST", "/estado_servers", true);
+    xhr.send();
+  }
+
+  function toggle(){
+    var x = document.getElementById('credenciales');
+    var y = document.getElementById('datos');
+    if(x.style.display == "none"){
+      x.style.display = "inline-block";
+      y.style.display = "none";
+      document.getElementById('toggle').innerHTML = "Estado";
+    }else{
+      x.style.display = "none";
+      y.style.display = "inline-block";
+      document.getElementById('toggle').innerHTML = "Credenciales";
+    }
+  }
+
+  function guardar(){
+    var ssid = document.getElementById('ssid').value;
+    var pass = document.getElementById('pass').value;
+    var servertcp = document.getElementById('servertcp').value;
+    var puertotcp = document.getElementById('puertotcp').value;
+    var serverdest = document.getElementById('serverdest').value;
+    var puertodest = document.getElementById('puertodest').value;
+    var urldestino = document.getElementById('urldestino').value;
+      
+    var data = {ssid:ssid, pass:pass, servertcp:servertcp, puertotcp:puertotcp, serverdest:serverdest, puertodest:puertodest, urldestino:urldestino};
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function(){
+      if(this.readyState == 4 && this.status == 200){
+        if(xhr.responseText != null){
+          console.log(xhr.responseText);
+        }
+      }
+    }
+
+    xhr.open("POST", "/config", true);
+    xhr.send(JSON.stringify(data));
+    alert("Datos cargados, reiniciar dipositivo en 3s");
+  };
+
+  function reset(){
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(){
+      if(this.readyState == 4 && this.status == 200){
+        if(xhr.responseText != null){
+          console.log(xhr.responseText);
+        }
+      }
+    }
+
+    xhr.open("POST", "/reset", true);
+    xhr.send();
+  }
+</script>
+</html>

@@ -1,0 +1,43 @@
+<!-- <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<strong>Administracion</strong>
+<hr>
+<a href="general.html" style="width:45%" class="btn btn--m btn--blue">Configuración General</a><br>
+<a href="config.html" style="width:45%" class="btn btn--m btn--blue">Configuración de red</a><br>
+<a href="info.html" style="width:45%" class="btn btn--m btn--blue">Información de red</a><br>
+<a href="datos.html" style="width:45%" class="btn btn--m btn--blue">Datos sensores</a><br>
+
+<script>
+window.onload = function(){
+    load("style.css", "css", function(){
+        load("microajax.js", "js", function(){
+
+        });
+    });
+}
+function load(e,t,n){if("js"==t){var a=document.createElement("script");a.src=e,a.type="text/javascript",a.async=!1,a.onload=function(){n()},document.getElementsByTagName("head")[0].appendChild(a)}else if("css"==t){var a=document.createElement("link");a.href=e,a.rel="stylesheet",a.type="text/css",a.async=!1,a.onload=function(){n()},document.getElementsByTagName("head")[0].appendChild(a)}}
+</script> -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<a href="/"  class="btn btn--s"><</a>&nbsp;&nbsp;<strong>Configuración de red</strong>
+<hr>
+Conectarse al router con éstos datos:<br>
+<form action="" method="get">
+<table border="0" cellspacing="0" cellpadding="1" style="width:310px;" align="center">
+<tr ><td align="center">SSID:</td><td><input type="text" id="ssid" name="ssid" value=""></td></tr>
+<tr ><td align="center">Password:</td><td><input type="text" id="password" name="password" value=""></td></tr>
+<tr ><td align="center">Server:</td><td><input type="text" id="server" name="server" value=""></td></tr>
+<tr ><td align="center">ID:</td><td><input type="text" id="id" name="id" value=""></td></tr>
+<tr ><td align="center">DHCP:</td><td><input type="checkbox" id="dhcp" name="dhcp"></td></tr>
+</table>
+<input type="submit" style="width:150px" class="btn btn--m btn--blue" value="Guardar">
+<hr>
+<strong>Estado de la conexión:</strong><div id="connectionstate" align="center">N/A</div>
+<hr>
+<strong>Redes:</strong><br>
+<table style="width:310px" align="center">
+<tr><td align="center"><div id="networks" style="text-align: center;">Escaneando...</div></td></tr>
+<tr><td align="center"><a href="javascript:GetState()" style="width:150px" class="btn btn--m btn--blue">Refresh</a></td></tr>
+</table>
+<script>

@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+     html,body{
+          width: 100%;
+          height: 100%;
+          margin: 0 auto;
+          font-family: sans-serif;
+          box-sizing: border-box;
+     }
+     .form{
+          padding: 25px;
+          margin: 1% 0 0 15%;
+          width: 70%;
+          background-color: #f05f40;  
+          border-radius: 10px;
+          float: left;
+     }
+     h1{
+          color: #F05F40;
+          padding: 4% 0 0 20px;
+          font-size: 50px;
+          margin: 0 auto;
+          float: left;
+     }
+     h2{
+          text-align: center;
+          color: #FFFFFF;
+          margin: 0 auto;
+     }
+     .input{
+          width:90%;
+          font-size:30px;
+          margin: 1% 0 15px 5%;
+          border: 1.5px solid #FFF;
+          background-color: transparent;
+          color: #FFFFFF;
+          border-radius: 5px;
+          text-align: center;
+     }
+     ::-webkit-input-placeholder{
+          color: rgba(255,255,255,0.85);
+     }
+     .label{
+          color: #ffffff;
+          font-size: 30px;
+          margin: 0 0 5px 0;
+     }
+     .btnguardar{
+          color: #F05F40;
+          background-color: #FFFFFF;
+          font-weight: 600;
+          font-size: 2.5rem;
+          border: none;
+          width: 80%;
+          cursor: pointer;
+          border-radius: 5px;
+          margin: 1% 0 0 10%;
+     }
+     .btnswitch{
+          color: #F05F40;
+          background-color: #FFFFFF;
+          font-size: 2rem;
+          width: 15%;
+          height: 100px;
+          cursor: pointer;
+          border-radius: 5px;
+          margin: 0.5% 5% 0 0%;
+          float: right;
+     }
+</style>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset='utf-8'>  
+<title>IOT Device</title>
+</head>
+<body>
+     <h1>Switch-IoT</h1>
+     <button class='btnswitch' onclick="toggle()">&#216;</button>
+     <div class='form'>
+          <h2>Introduzca las credenciales</h2>
+          <input class='input' id='ssid' placeholder="Red WiFi">
+          <input type="password" class='input' id='pass' placeholder="Contraseña">
+          <input class="input" id="user" placeholder="User Cayenne">
+          <input class="input" id="mqttpass" placeholder="MQTTpass Cayenne">
+          <input class="input" id="clientid" placeholder="ClientID Cayenne">
+          <button class='btnguardar' onclick="guardar()">GUARDAR</button>
+     </div>
+</body>
+</form>
+<script type="text/javascript">
+     function guardar(){
+          console.log("Guardando datos...");
+
+          var ssid = document.getElementById('ssid').value;
+          var pass = document.getElementById('pass').value;
+          var user = document.getElementById('user').value;
+          var mqtt = document.getElementById('mqttpass').value;
+          var client = document.getElementById('clientid').value;
+          var data = {ssid:ssid, pass:pass, user:user, mqtt:mqtt, client:client};
+
+          var xhr = new XMLHttpRequest();
+          var url = "/config";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send(JSON.stringify(data));
+
+          alert("Datos cargados, reiniciar dipositivo en 3s");
+     };
+     function toggle(){
+          console.log("Interruptor activado...");
+          var xhr = new XMLHttpRequest();
+          var url = "/toggle";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send();
+     }
+</script>
+</html>

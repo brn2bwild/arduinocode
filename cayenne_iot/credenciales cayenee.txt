@@ -1,0 +1,3 @@
+char username[40] = "abe72a70-31fd-11e7-aa05-db50d12f1f3d";
+char mqttpass[40] = "e91b50872db8081c5bb705d2e9c7256124e4ca5d";
+char clientid[40] = "12070440-eed3-11e8-a08c-c5a286f8c00d";

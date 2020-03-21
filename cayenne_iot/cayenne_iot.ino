@@ -1,0 +1,360 @@
+#include <CayenneMQTTESP8266.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+
+#define CAYENNE_DEBUG
+#define CAYENNE_PRINT Serial
+#define pinLed        13
+#define pinBoton      0 
+#define pinRele       12
+#define canalCayenne  0
+
+//char ssid[] = "_hoy-no";
+//char pass[] = "a2h0o1r7a/";
+//char ssid[] = "Tesalia-AP";
+//char pass[] = "aahooraa";
+
+unsigned long ultimoParpadeo;
+
+const char *_ssid = "", *_pass = "";
+const char *serverCayenne = "mqtt.mydevices.com";
+const int cayennePort = 1883;
+uint8_t MAC_AP[WL_MAC_ADDR_LENGTH];// variable que guardará la MAC_AP del dispositivo
+uint8_t MAC_WIFI[6];
+int estadoWiFi;
+int estadoServidor;
+
+IPAddress ipEstatica(1,1,1,1);
+IPAddress ipMascara(255,255,255,0);
+
+char username[40];
+char mqttpass[40];
+char clientid[40];
+
+char pagina_web[] PROGMEM = R"=====(
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+     html,body{
+          width: 100%;
+          height: 100%;
+          margin: 0 auto;
+          font-family: sans-serif;
+          box-sizing: border-box;
+     }
+     .form{
+          padding: 25px;
+          margin: 1% 0 0 15%;
+          width: 70%;
+          background-color: #f05f40;  
+          border-radius: 10px;
+          float: left;
+     }
+     h1{
+          color: #F05F40;
+          padding: 4% 0 0 20px;
+          font-size: 50px;
+          margin: 0 auto;
+          float: left;
+     }
+     h2{
+          text-align: center;
+          color: #FFFFFF;
+          margin: 0 auto;
+     }
+     .input{
+          width:90%;
+          font-size:30px;
+          margin: 1% 0 15px 5%;
+          border: 1.5px solid #FFF;
+          background-color: transparent;
+          color: #FFFFFF;
+          border-radius: 5px;
+          text-align: center;
+     }
+     ::-webkit-input-placeholder{
+          color: rgba(255,255,255,0.85);
+     }
+     .label{
+          color: #ffffff;
+          font-size: 30px;
+          margin: 0 0 5px 0;
+     }
+     .btnguardar{
+          color: #F05F40;
+          background-color: #FFFFFF;
+          font-weight: 600;
+          font-size: 2.5rem;
+          border: none;
+          width: 80%;
+          cursor: pointer;
+          border-radius: 5px;
+          margin: 1% 0 0 10%;
+     }
+     .btnswitch{
+          color: #F05F40;
+          background-color: #FFFFFF;
+          font-size: 2rem;
+          width: 15%;
+          height: 100px;
+          cursor: pointer;
+          border-radius: 5px;
+          margin: 0.5% 5% 0 0%;
+          float: right;
+     }
+</style>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset='utf-8'>  
+<title>IOT Device</title>
+</head>
+<body>
+     <h1>Switch-IoT</h1>
+     <button class='btnswitch' onclick="toggle()">&#216;</button>
+     <div class='form'>
+          <h2>Introduzca las credenciales</h2>
+          <input class='input' id='ssid' placeholder="Red WiFi">
+          <input type="password" class='input' id='pass' placeholder="Contraseña">
+          <input class="input" id="user" placeholder="User Cayenne">
+          <input class="input" id="mqttpass" placeholder="MQTTpass Cayenne">
+          <input class="input" id="clientid" placeholder="ClientID Cayenne">
+          <button class='btnguardar' onclick="guardar()">GUARDAR</button>
+     </div>
+</body>
+</form>
+<script type="text/javascript">
+     function guardar(){
+          console.log("Guardando datos...");
+
+          var ssid = document.getElementById('ssid').value;
+          var pass = document.getElementById('pass').value;
+          var user = document.getElementById('user').value;
+          var mqtt = document.getElementById('mqttpass').value;
+          var client = document.getElementById('clientid').value;
+          var data = {ssid:ssid, pass:pass, user:user, mqtt:mqtt, client:client};
+
+          var xhr = new XMLHttpRequest();
+          var url = "/config";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send(JSON.stringify(data));
+
+          alert("Datos cargados, reiniciar dipositivo en 3s");
+     };
+     function toggle(){
+          console.log("Interruptor activado...");
+          var xhr = new XMLHttpRequest();
+          var url = "/toggle";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send();
+     }
+</script>
+</html>
+)=====";
+
+WiFiClient espClient;
+ESP8266WebServer server;
+
+void guardarDatoswifi(){
+  String data = server.arg("plain");
+  DynamicJsonBuffer jBuffer;
+  JsonObject& jObject = jBuffer.parseObject(data);
+
+  File configFile = SPIFFS.open("/config.json","w");
+  jObject.printTo(configFile);
+  configFile.close();
+
+  server.send(200, "application/json", "{\"estado\":\"ok\"}");
+  delay(500);
+
+  conectar_WiFi();
+}
+
+void toggleRele(){
+  digitalWrite(pinRele, !digitalRead(pinRele));
+  server.send(200, "application/json", "{\"estado\":\"ok\"}");
+  delay(500);
+}
+
+void conectar_AP(){
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPmacAddress(MAC_AP);
+
+  String macDisp = String(MAC_AP[WL_MAC_ADDR_LENGTH - 2], HEX) + String(MAC_AP[WL_MAC_ADDR_LENGTH - 1], HEX);
+  macDisp.toUpperCase();
+
+  String nombreAP = "IOT_dev" + macDisp;
+
+  Serial.println(nombreAP);
+
+  char nombreAPChar[nombreAP.length() + 1];
+
+  memset(nombreAPChar, 0, nombreAP.length() + 1);
+
+  for(int i = 0; i < nombreAP.length(); i++){
+    nombreAPChar[i] = nombreAP.charAt(i);
+  }
+
+  const char* passAPchar = "012345678";
+
+  WiFi.softAPConfig(ipEstatica, ipEstatica, ipMascara);
+  WiFi.softAP(nombreAPChar, passAPchar);
+  digitalWrite(pinLed, LOW);
+}
+
+int conectar_WiFi(){
+  WiFi.softAPdisconnect(true);
+  WiFi.disconnect();
+  delay(500);
+
+  if(SPIFFS.exists("/config.json")){
+    const char *_ssid = "", *_pass = "";
+    File configFile = SPIFFS.open("/config.json","r");
+    if(configFile){
+      size_t size = configFile.size();
+      std::unique_ptr<char[]> buf(new char[size]);
+      configFile.readBytes(buf.get(), size);
+      configFile.close();
+
+      DynamicJsonBuffer jsonBuffer;
+      JsonObject &jObject = jsonBuffer.parseObject(buf.get());
+      if(jObject.success()){
+        _ssid = jObject["ssid"];
+        _pass = jObject["pass"];
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(_ssid, _pass);
+
+        Serial.println("");
+        Serial.print("Intentado conectar a red WiFi: ");
+        Serial.println(_ssid);
+        unsigned long tiempoInicio = millis();
+        while(WiFi.status() != WL_CONNECTED){
+          delay(500);
+          Serial.print(".");
+          digitalWrite(pinLed, !digitalRead(pinLed));
+          if((unsigned long)(millis() - tiempoInicio >= 20000)) break;
+        }
+      }
+    }
+  }
+
+  if(WiFi.status() == WL_CONNECTED){
+    return 1;
+  }else{
+    return 0;
+  }
+}
+
+void setup() {
+  
+  pinMode(pinRele, OUTPUT);
+  pinMode(pinLed, OUTPUT);
+  pinMode(pinBoton, INPUT);
+
+  SPIFFS.begin();
+  delay(500);
+
+  Serial.begin(115200);
+  estadoWiFi = conectar_WiFi();
+
+  if(estadoWiFi == 1){
+    // se inicializa la comunicación con servidor
+    Serial.println("WiFi conectado, intentando conectar con el servidor");
+    if(!espClient.connect(serverCayenne, cayennePort)){
+      Serial.println("No se pudo conectar con el servidor");
+    }else{
+      if(SPIFFS.exists("/config.json")){
+        const char *_user = "", *_mqttpass = "", *_client= "";
+        File configFile = SPIFFS.open("/config.json","r");
+        if(configFile){
+          size_t size = configFile.size();
+          std::unique_ptr<char[]> buf(new char[size]);
+          configFile.readBytes(buf.get(), size);
+          configFile.close();
+
+          DynamicJsonBuffer jsonBuffer;
+          JsonObject &jObject = jsonBuffer.parseObject(buf.get());
+          if(jObject.success()){
+            _user = jObject["user"];
+            _mqttpass = jObject["mqttpass"];
+            _client = jObject["clientid"];
+            
+            snprintf(username, 40, "%s", _user);
+            snprintf(mqttpass, 40, "%s", _mqttpass);
+            snprintf(clientid, 40, "%s", _client);
+          }
+        }
+      }
+      Cayenne.begin(username,mqttpass,clientid,_ssid,_pass);
+      Serial.println("Dispositivo conectado con el servidor");
+      Serial.print("Ip: ");
+      Serial.println(WiFi.localIP());
+      digitalWrite(pinLed, LOW);
+    }
+  }else{
+    conectar_AP();
+    Serial.print("IP AP: ");
+    Serial.println(ipEstatica);
+  }
+  WiFi.printDiag(Serial);
+
+  server.on("/",[](){server.send_P(200,"text/html",pagina_web);});
+  server.on("/toggle", HTTP_POST, toggleRele);
+  server.on("/config", HTTP_POST, guardarDatoswifi);
+  server.on("/reset", [](){
+    server.send(200,"application/json","{\"estado\":\"reiniciando el dispositivo\"}");
+    delay(1000);
+    ESP.restart();
+  });
+  server.begin();
+  digitalWrite(pinRele, HIGH);
+}
+
+CAYENNE_CONNECTED(){
+  estadoServidor = 1;
+}
+
+CAYENNE_DISCONNECTED(){
+  estadoServidor = 0;
+}
+
+void loop() {
+
+  if(!digitalRead(pinBoton)){
+    delay(250);
+    digitalWrite(pinRele, !digitalRead(pinRele));
+  }
+  server.handleClient();
+  if(estadoServidor == 1) Cayenne.loop();
+}
+
+CAYENNE_IN(canalCayenne) {
+  int valor = getValue.asInt();
+  CAYENNE_LOG("Canal %d, pin %d, valor %d", canalCayenne, pinRele, valor);
+  digitalWrite(pinRele, valor);
+}
+
+CAYENNE_OUT(canalCayenne){
+  int valor = digitalRead(pinRele);
+  CAYENNE_LOG("Canal %d, pin %d, valor %d", canalCayenne, pinBoton, valor);
+  Cayenne.virtualWrite(canalCayenne, valor, TYPE_DIGITAL_SENSOR, UNIT_DIGITAL);
+}

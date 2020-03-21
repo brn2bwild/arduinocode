@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        .clockdate-wrapper {
+            background-color: #333;
+            padding:25px;
+            max-width:350px;
+            width:100%;
+            text-align:center;
+            border-radius:5px;
+            margin:0 auto;
+            margin-top:15%;
+        }
+        #hora-actual{
+            background-color:#333;
+            font-family: sans-serif;
+            font-size:60px;
+            text-shadow:0px 0px 1px #fff;
+            color:#fff;
+        }
+        #hora-actual span {
+            color:#888;
+            text-shadow:0px 0px 1px #333;
+            font-size:30px;
+            position:relative;
+            top:-27px;
+            left:-10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="clock-wrapper">
+        <div id="hora-actual"></div>
+    </div>
+    <input type="checkbox" id="activar-encendido">
+    <input type="time" id="hora-prog-encendido" value="00:00:00">
+    <input type="checkbox" id="activar-apagado">
+    <input type="time" id="hora-prog-apagado" value="00:00:00">
+    <input type="checkbox" id="control-estado">
+    <!-- <input type="button" id="programar" value="Programar" onclick="programarHora();"> -->
+    <script type="text/javascript" src="mqttws31.min.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+    
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+     html,body{
+          margin:auto;
+          text-align:center;
+          font-family:sans-serif;
+     }
+     .form{
+          padding:10px;
+          margin:auto;
+          background-color:#f05f40; 
+          width:80%;
+          border-radius:20px;
+          text-align:center;
+          min-width: 310px;
+     }
+     h1{
+          color:#F05F40;
+          font-size:70px;
+          margin: 2% auto;
+     }
+     .input{
+          width:85%;
+          font-size:30px;
+          margin:2% auto 1.5% auto;
+          border:2.5px solid #FFF;
+          background-color:transparent;
+          color:#FFFFFF;
+          border-radius:20px;
+          text-align: center;
+     }
+     ::-webkit-input-placeholder{
+          color:rgba(255,255,255,0.9);
+     }
+     .boton{
+          color:#F05F40;
+          background-color:#FFFFFF;
+          font-weight:600;
+          font-size:2.5rem;
+          border:none;
+          width:80%;
+          cursor:pointer;
+          border-radius:25px;
+          margin:1.5% auto;
+     }
+</style>
+<meta name='viewport' content='width=device-width, initial-scale=1.0' charset='utf-8'>
+<title>Dispositivo IoT</title>
+</head>
+<body>
+     <h1>Sensor IoT</h1>
+     <div class='form'>
+          <input class='input' id='ssid' placeholder="Red WiFi">
+          <input type="password" class='input' id='pass' placeholder="Contraseña WiFi">
+          <input class='input' id='server' placeholder="Server" maxlength="30">
+          <input class='input' id='id' placeholder="ID Dispositivo" maxlength="20">
+          <button class='boton' onclick="guardar()">GUARDAR</button>
+     </div>
+</body>
+</form>
+<script type="text/javascript">
+     function guardar(){
+          var ssid = document.getElementById('ssid').value;
+          var pass = document.getElementById('pass').value;
+          var server = document.getElementById('server').value;
+          var id = document.getElementById('id').value;
+          var data = {ssid:ssid, pass:pass, server:server, id:id};
+
+          var xhr = new XMLHttpRequest();
+          var url = "/config";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send(JSON.stringify(data));
+     };
+</script>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+     html,body{
+          width: 100%;
+          height: 100%;
+          margin: 0 auto;
+          font-family: sans-serif;
+          box-sizing: border-box;
+          text-align: center;
+     }
+     .input{
+          width:75%;
+          font-size:26px;
+          margin: 0 0 5px 0;
+          border: 1.5px solid #000;
+          border-radius: 5px;
+          text-align: center;
+          margin: 0 0 1% 0;
+     }
+     ::-webkit-input-placeholder{
+          color: rgba(0,0,0,0.85);
+     }
+     .btnguardar{
+          font-weight: 600;
+          font-size: 2.1rem;
+          width: 75%;
+          cursor: pointer;
+          border-radius: 5px;
+     }
+     .btnswitch{
+          font-size: 1.6rem;
+          width: 75%;
+          cursor: pointer;
+          border-radius: 5px;
+          margin: 0 0 1% 0;
+     }
+</style>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset='utf-8'>  
+<title>IoT Device</title>
+</head>
+<body>
+     <h1 style="margin: 0">Switch-IoT</h1>
+     <h2>Introduzca las credenciales</h2>
+     <button class='btnswitch' onclick="toggle()">Encender/apagar</button>
+     <input class='input' id='ssid' placeholder="Red WiFi" maxlength="50">
+     <input type="password" class='input' id='pass' placeholder="WiFi password" maxlength="50">
+     <input class='input' id='mqttserver' placeholder="Server" maxlength="50">
+     <input class="input" id="mqttuser" placeholder="MQTT user" maxlength="50">
+     <input type="password" class="input" id="mqttpass" placeholder="MQTT password" maxlength="50">
+     <input class="input" id="mqttid" placeholder="ID dispositivo" maxlength="50">
+     <button class='btnguardar' onclick="guardar()">GUARDAR</button>
+</body>
+</form>
+<script type="text/javascript">
+     function guardar(){
+          console.log("Guardando datos...");
+
+          var ssid = document.getElementById('ssid').value;
+          var pass = document.getElementById('pass').value;
+          var mqttserver = document.getElementById('mqttserver').value;
+          var mqttuser = document.getElementById('mqttuser').value;
+          var mqttpass = document.getElementById('mqttpass').value;
+          var mqttid = document.getElementById('mqttid').value;
+          
+          var data = {ssid:ssid, pass:pass, mqttserver:mqttserver, mqttuser:mqttuser, mqttpass:mqttpass, mqttid:mqttid};
+
+          console.log(data);
+
+          var xhr = new XMLHttpRequest();
+          var url = "/config";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send(JSON.stringify(data));
+
+          alert("Datos cargados, reiniciar dipositivo en 3s");
+     };
+     function toggle(){
+          console.log("Cambio interruptor...");
+          var xhr = new XMLHttpRequest();
+          var url = "/toggle";
+
+          xhr.onreadystatechange = function(){
+               if(this.readyState == 4 && this.status == 200){
+                    if(xhr.responseText != null){
+                         console.log(xhr.responseText);
+                    }
+               }
+          }
+
+          xhr.open("POST", url, true);
+          xhr.send();
+     }
+</script>
+</html>
+
